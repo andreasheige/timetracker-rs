@@ -42,6 +42,7 @@ fn a_named_agent_wins_over_detection() {
         agents: vec!["gemini".to_string()],
         all: false,
         hooks: true,
+        session_card: false,
     };
 
     let chosen = chosen_targets(&request, home).unwrap();
@@ -57,6 +58,7 @@ fn an_unknown_agent_is_an_error_naming_the_known_ones() {
         agents: vec!["clippy".to_string()],
         all: false,
         hooks: true,
+        session_card: false,
     };
 
     let error = chosen_targets(&request, Path::new("/home/someone"))
@@ -74,6 +76,7 @@ fn all_selects_every_row_without_detecting_anything() {
         agents: Vec::new(),
         all: true,
         hooks: true,
+        session_card: false,
     };
 
     let chosen = chosen_targets(&request, Path::new("/home/someone")).unwrap();
@@ -94,6 +97,7 @@ fn detection_picks_the_agents_whose_directories_exist() {
         agents: Vec::new(),
         all: false,
         hooks: true,
+        session_card: false,
     };
 
     let chosen = chosen_targets(&request, &home).unwrap();
@@ -119,6 +123,7 @@ fn no_agent_at_all_falls_back_to_claude_code() {
         agents: Vec::new(),
         all: false,
         hooks: true,
+        session_card: false,
     };
 
     let chosen = chosen_targets(&request, &home).unwrap();

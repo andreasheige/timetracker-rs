@@ -186,7 +186,7 @@ setting `TT_SKIP_UPDATE_CHECK=1`. It's also skipped automatically whenever a
 If you installed the Flatpak build, update with `flatpak update` instead —
 `tt update` won't try to replace a binary it can't write to.
 
-### `tt skill install [--agent <name>]... [--all] [--dir <path>] [--no-hooks]`
+### `tt skill install [--agent <name>]... [--all] [--dir <path>] [--no-hooks] [--session-card]`
 
 Install the `tt-time-logging` agent skill, and Claude Code's hooks for it.
 
@@ -196,6 +196,7 @@ tt skill install --agent copilot       # a named agent, repeatable
 tt skill install --all                 # every agent it knows
 tt skill install --no-hooks            # the skill only
 tt skill install --dir <skills dir>    # a directory, for an agent it doesn't know
+tt skill install --session-card        # SessionStart gets the card, not the whole contract
 ```
 
 Known agents are `claude`, `codex`, `copilot` and `gemini`. An agent counts as
@@ -211,6 +212,13 @@ The skill files are built into the binary, so this needs no network and no
 The hooks half needs Node.js on your `PATH`, and is skipped when there is no
 `~/.claude`. See [the readme](../readme.md#the-agent-skill) for what each hook
 does, and for how to remove them.
+
+`--session-card` is opt-in. With it, the Claude Code `SessionStart` hook injects
+only the operating card and the path of the full contract (about 1 KB), not the
+whole contract (about 23 KB). The agent reads the rest when it needs it. The
+setting is kept in `settings.json`, not in `config.toml`: each install writes
+the variant its flags ask for, so run `tt skill install` without the flag to go
+back to the whole contract.
 
 ### `tt skill targets`
 
@@ -442,7 +450,7 @@ skip); `[layout]` is rewritten on every later `P`/`A`/`S`/`T`/`v`/`f` toggle, an
 on `Enter` in the `c` column picker, too, which leaves `onboarding` alone.
 Neither needs to be hand-edited, though both can be.
 Onboarding's second screen offers to run
-[`tt skill install`](#tt-skill-install---agent-name---all---dir-path---no-hooks), which installs
+[`tt skill install`](#tt-skill-install---agent-name---all---dir-path---no-hooks---session-card), which installs
 the `AGENTS.md` time-logging contract as a skill for your coding agent.
 
 The popup shows once, then the app sets `onboarding = false` so it stays

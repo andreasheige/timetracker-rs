@@ -382,6 +382,7 @@ pub fn run_tui(update_notice: Option<String>) -> Result<()> {
                     agents: Vec::new(),
                     all: false,
                     hooks: true,
+                    session_card: false,
                 }) {
                     println!("Couldn't install the skill: {error}");
                 }

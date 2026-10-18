@@ -164,7 +164,7 @@ pub fn write_skill_files(skills_dir: &Path) -> Result<PathBuf> {
 ///
 /// Best-effort: it reports what happened and never fails the install. The hooks
 /// are Node scripts, so a machine without Node cannot run them either way.
-fn install_claude_hooks(skill_dir: &Path) {
+fn install_claude_hooks(skill_dir: &Path, session_card: bool) {
     let Some(claude) = claude_home() else {
         println!("Couldn't resolve your home directory — skipped the Claude Code hooks.");
         return;
@@ -180,7 +180,12 @@ fn install_claude_hooks(skill_dir: &Path) {
 
     let script = skill_dir.join("scripts/install-hooks.mjs");
     println!("\nInstalling Claude Code hooks...\n");
-    match Command::new("node").arg(&script).status() {
+    let mut node = Command::new("node");
+    node.arg(&script);
+    if session_card {
+        node.arg("--session-card");
+    }
+    match node.status() {
         Ok(status) if status.success() => {}
         Ok(status) => println!("\ninstall-hooks.mjs exited with {status}."),
         Err(error) => println!(
@@ -201,6 +206,8 @@ pub struct Request {
     pub all: bool,
     /// Whether to wire Claude Code's hooks as well.
     pub hooks: bool,
+    /// Whether SessionStart gets only the card, not the whole contract.
+    pub session_card: bool,
 }
 
 /// Prints the detected agents, and the directory each would be served from.
@@ -243,7 +250,7 @@ pub fn install(request: Request) -> Result<()> {
         let dest = write_skill_files(&dir)?;
         println!("Installed the {SKILL_NAME} skill into {}.", dest.display());
         if request.hooks {
-            install_claude_hooks(&dest);
+            install_claude_hooks(&dest, request.session_card);
         }
         print_other_agents_hint();
         return Ok(());
@@ -272,7 +279,7 @@ pub fn install(request: Request) -> Result<()> {
     // Only Claude Code has hooks. The other agents read the contract on their
     // own, with no enforcement layer for `tt` to install.
     match (request.hooks, claude_skill_dir) {
-        (true, Some(dir)) => install_claude_hooks(&dir),
+        (true, Some(dir)) => install_claude_hooks(&dir, request.session_card),
         (true, None) => println!("\nNo Claude Code install selected, so no hooks were wired."),
         (false, _) => println!("\nSkipped the Claude Code hooks (--no-hooks)."),
     }

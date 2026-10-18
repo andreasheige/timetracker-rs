@@ -158,6 +158,11 @@ pub enum SkillCommands {
         /// Write the skill only; leave Claude Code's settings.json alone.
         #[arg(long)]
         no_hooks: bool,
+        /// Have Claude Code's SessionStart hook inject only the operating card
+        /// and the contract's path, not the whole contract. Opt-in; a later
+        /// install without it switches back.
+        #[arg(long, conflicts_with = "no_hooks")]
+        session_card: bool,
     },
     /// List the agents this knows, and which of them are on this machine
     Targets,

@@ -89,6 +89,24 @@ The card is not a separate file to keep in sync; it's the head of `SKILL.md`,
 cut at the marker. Keep the document's opening actionable and the card stays
 correct on its own. `SessionStart` still injects the whole thing.
 
+### Card-only session start (opt-in)
+
+```sh
+node <wherever the skill landed>/scripts/install-hooks.mjs --session-card
+# or
+tt skill install --session-card
+```
+
+This registers `tt-contract-hook.mjs session-card` on `SessionStart` in place of
+`session`. That mode injects the same card as `UserPromptSubmit`, plus the
+absolute path of the installed `SKILL.md`, so the agent reads the rest on demand
+instead of receiving ~23 KB at the start of every session. Without a card
+marker it falls back to the whole file, like `prompt`.
+
+Each run of the installer writes the variant its flags ask for and removes the
+other, so only one of them injects. Run it again without `--session-card` to go
+back to the whole contract.
+
 ## Keeping the mirror honest
 
 `SKILL.md` mirrors `AGENTS.md` in the timetracker-rs source repo. The two are

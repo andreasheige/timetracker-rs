@@ -2,13 +2,16 @@
 // SessionStart/UserPromptSubmit hook: injects the time-logging contract as
 // additionalContext. Installed by install-hooks.mjs.
 //
-// Usage: node tt-contract-hook.mjs <session|prompt>
+// Usage: node tt-contract-hook.mjs <session|session-card|prompt>
 //
-//   session - the whole contract, once, at session start.
-//   prompt  - only the operating card (everything above the `card:end` marker
-//             in SKILL.md), on every prompt.
+//   session      - the whole contract, once, at session start.
+//   session-card - opt-in alternative to `session`: the operating card plus
+//                  the full contract's path, once, at session start. Installed
+//                  by `install-hooks.mjs --session-card`.
+//   prompt       - only the operating card (everything above the `card:end`
+//                  marker in SKILL.md), on every prompt.
 //
-// Both modes append the harness's own session id, read from the hook payload on
+// Every mode appends the harness's own session id, read from the hook payload on
 // stdin. Re-injected every prompt, so it cannot go stale in a compacted context.
 //
 // Why the split: UserPromptSubmit fires on every turn, and re-injecting 15KB
@@ -35,6 +38,7 @@ const CARD_MARKER = "<!-- card:end";
 
 const EVENTS = {
   session: "SessionStart",
+  "session-card": "SessionStart",
   prompt: "UserPromptSubmit",
 };
 
@@ -68,9 +72,11 @@ const hookEventName = EVENTS[mode];
 if (!hookEventName) emit(null, null);
 
 let contract;
+let contractPath;
 try {
   const scriptDir = dirname(fileURLToPath(import.meta.url));
-  contract = readFileSync(join(scriptDir, "SKILL.md"), "utf8");
+  contractPath = join(scriptDir, "SKILL.md");
+  contract = readFileSync(contractPath, "utf8");
 } catch {
   emit(hookEventName, null);
 }
@@ -84,7 +90,17 @@ if (mode === "session") emit(hookEventName, contract + session);
 // whole file rather than injecting nothing.
 const cut = contract.indexOf(CARD_MARKER);
 const head = cut === -1 ? contract : contract.slice(0, cut);
-emit(
-  hookEventName,
-  head.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "").trim() + session,
-);
+const card = head.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "").trim();
+
+// A path, not a skill name: a Read works whether or not the skill is
+// registered with the harness. No marker means the card is the whole file
+// already, so there is nothing left to point at.
+if (mode === "session-card" && cut !== -1) {
+  emit(
+    hookEventName,
+    `${card}\n\nFull contract (rules, parallel subagents, summaries, tags): read ` +
+      `${contractPath.replace(/\\/g, "/")} when a case isn't covered above.` +
+      session,
+  );
+}
+emit(hookEventName, card + session);

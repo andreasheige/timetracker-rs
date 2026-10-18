@@ -8,7 +8,8 @@
 // session):
 //
 //   SessionStart     - injects this skill's full contract; opens the activity
-//                      window.
+//                      window. With --session-card, injects only the operating
+//                      card plus the full contract's path instead.
 //   UserPromptSubmit - re-injects only the operating card on every prompt, so
 //                      the begin/touch/end discipline survives context getting
 //                      pushed out in a long session without re-spending the
@@ -28,16 +29,20 @@
 // All hook commands use absolute paths under ~/.claude/hooks/ — relative
 // paths silently fail to resolve on at least Windows.
 //
-// Safe to re-run: entries are added only if not already present.
+// Safe to re-run: entries are added only if not already present. Each run
+// sets the SessionStart variant from its own flags, so re-running without
+// --session-card switches back to the full contract.
 //
 // Usage (from anywhere, after `npx skills add ...`):
-//   node <wherever the skill landed>/scripts/install-hooks.mjs
+//   node <wherever the skill landed>/scripts/install-hooks.mjs [--session-card]
 
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
+
+const sessionCard = process.argv.slice(2).includes("--session-card");
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const skillDir = dirname(scriptDir); // .../tt-time-logging
@@ -123,7 +128,12 @@ const removedLegacy = prune(["SessionStart", "UserPromptSubmit"], isLegacyInject
 const removedStopCheck = prune(["Stop"], isStopCheck);
 
 // Quoted: an absolute home path can contain spaces (e.g. "C:/Users/John Doe/...").
-const sessionStartCmd = `node "${contractHookAbs}" session`;
+const fullSessionCmd = `node "${contractHookAbs}" session`;
+const cardSessionCmd = `node "${contractHookAbs}" session-card`;
+const sessionStartCmd = sessionCard ? cardSessionCmd : fullSessionCmd;
+// Only one SessionStart variant may stay, or both would inject.
+const otherSessionCmd = sessionCard ? fullSessionCmd : cardSessionCmd;
+prune(["SessionStart"], (command) => command === otherSessionCmd);
 const userPromptSubmitCmd = `node "${contractHookAbs}" prompt`;
 const activityBeginCmd = `node "${activityHookAbs}" begin`;
 const activityEndCmd = `node "${activityHookAbs}" end`;
@@ -179,6 +189,11 @@ writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 
 console.log(`tt-time-logging hooks installed into ${settingsPath}.`);
 console.log(`Contract, activity- and contract-hook scripts copied into ${destDir}.`);
+console.log(
+  sessionCard
+    ? "SessionStart injects the operating card and the contract's path (--session-card)."
+    : "SessionStart injects the full contract.",
+);
 if (removedLegacy > 0) {
   console.log(`Removed ${removedLegacy} legacy inline contract-injection hook(s).`);
 }

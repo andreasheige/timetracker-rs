@@ -118,11 +118,13 @@ fn main() -> Result<()> {
                 all,
                 dir,
                 no_hooks,
+                session_card,
             } => skill::install(skill::Request {
                 dir,
                 agents: agent,
                 all,
                 hooks: !no_hooks,
+                session_card,
             }),
             cli::SkillCommands::Targets => skill::list_targets(),
         },

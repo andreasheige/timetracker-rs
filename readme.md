@@ -122,7 +122,7 @@ scripts into `~/.claude/hooks/tt-time-logging/`, and registers them in your
 
 | Event | What it does |
 |---|---|
-| `SessionStart` | Injects the full contract, and opens the activity window. |
+| `SessionStart` | Injects the full contract, and opens the activity window. With `tt skill install --session-card`, it injects only the operating card and the contract's path. |
 | `UserPromptSubmit` | Re-injects the short operating card, and renews open marks. |
 | `SubagentStop` | Records a subagent dispatch. |
 | `Stop` | Closes the activity window, then warns about marks left open. |
